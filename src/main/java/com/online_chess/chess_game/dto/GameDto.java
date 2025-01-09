@@ -1,7 +1,5 @@
 package com.online_chess.chess_game.dto;
 
-import com.online_chess.chess_game.entity.Game;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -19,16 +17,6 @@ public class GameDto {
     private String boardState;
     private String playerTurn;
     private String status;
-
-    public Game toGame(){
-        return Game.builder()
-                .id(this.id)
-                .status(this.status)
-                .playerTurn(this.playerTurn)
-                .boardState(this.boardState)
-                .build();
-    	
-    }
 
 	@Override
 	public String toString() {

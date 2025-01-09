@@ -3,8 +3,6 @@ package com.online_chess.chess_game.component;
 import java.io.Serializable;
 import java.util.Map;
 
-import jakarta.persistence.ElementCollection;
-import jakarta.persistence.Lob;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -24,8 +22,6 @@ public class BoardState implements Serializable{
 	 */
 	private static final long serialVersionUID = 1L;
 	
-	@ElementCollection
-	@Lob
 	private Map<Square,Piece> board;
 	private Color nextTurn;
 	

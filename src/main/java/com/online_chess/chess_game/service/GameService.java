@@ -1,17 +1,19 @@
 package com.online_chess.chess_game.service;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.online_chess.chess_game.client.ChessUserClient;
 import com.online_chess.chess_game.component.BoardState;
 import com.online_chess.chess_game.component.Color;
 import com.online_chess.chess_game.component.Piece;
@@ -20,12 +22,9 @@ import com.online_chess.chess_game.component.Square;
 import com.online_chess.chess_game.dto.GameDto;
 import com.online_chess.chess_game.dto.GameRequest;
 import com.online_chess.chess_game.dto.MoveRequest;
-import com.online_chess.chess_game.entity.Game;
 import com.online_chess.chess_game.exception.CustomException;
 import com.online_chess.chess_game.kafka.ChessKafkaPublisher;
-import com.online_chess.chess_game.repository.GameRepository;
 
-import jakarta.transaction.Transactional;
 import lombok.extern.java.Log;
 
 @Service
@@ -33,18 +32,21 @@ import lombok.extern.java.Log;
 public class GameService {
 	
 	private static final ObjectMapper objectMapper = new ObjectMapper();
-
-    @Autowired
-    private GameRepository gameRepository;
-    
+   
     @Autowired
     private ChessMoveValidator chessMoveValidator;
+    
+    @Autowired
+    private ChessUserClient chessUserClient;
+    
+    @Autowired
+    private ChessMoveCache chessMoveCache;
     
     
     @Autowired
     private ChessKafkaPublisher chessKafkaPublisher;
 
-    public Game startGame(GameRequest gameRequest) {
+    public GameDto startGame(GameRequest gameRequest) {
     
         BoardState boardState = initializeBoard();
         boardState.setNextTurn(Color.WHITE);
@@ -57,21 +59,30 @@ public class GameService {
 			
 		}
         GameDto gameDto = GameDto.builder().boardState(boardStateStr).playerTurn(
-        		gameRequest.getPlayer1Id().toString()+gameRequest.getPlayer2Id()).status("ongoing").build();
-        return gameRepository.save(gameDto.toGame());
+        		gameRequest.getPlayer1Id().toString()+"VS"+gameRequest.getPlayer2Id()).status("ongoing").build();
+        
+		ResponseEntity<GameDto> savedGame =chessUserClient.saveUserGame(gameDto);
+		chessUserClient.updateUserActivity(gameRequest.getPlayer1Id());
+		chessUserClient.updateUserActivity(gameRequest.getPlayer2Id()); 
+		chessMoveCache.startInCache(savedGame.getBody());
+		return savedGame.getBody();
+		 
     }
 
     
 
-	public Game makeMove(MoveRequest moveRequest) {
+	public GameDto makeMove(MoveRequest moveRequest) {
 		
-        Game game = gameRepository.findById(moveRequest.getGameId())
-                .orElseThrow(() -> new CustomException("Game not found"));
-
-        GameDto gameDto = game.toGameDto();
-        if (!gameDto.getStatus().equals("ongoing")) {
-            throw new CustomException("Game is not ongoing");
-        }
+		GameDto gameDto = GameDto.builder().build();
+		if(moveRequest.getGameId() != null) {
+			gameDto = chessMoveCache.moveInCache(moveRequest);
+		}
+        
+		
+		if (!gameDto.getStatus().equals("ongoing")) { 
+			throw new CustomException("Game is not ongoing"); 
+		}
+		
         try {
 	        	
         	BoardState boardstateObj = objectMapper.readValue(gameDto.getBoardState(), BoardState.class);
@@ -102,8 +113,18 @@ public class GameService {
         } catch (Exception ex) {
         	throw new CustomException(ex.getMessage());
         }
+        
+        if(!gameDto.getStatus().equals("ongoing")) {
+        	ResponseEntity<GameDto> game = chessUserClient.saveUserGame(gameDto);
+        	String[] players = moveRequest.getPlayer().split("VS");
+        	chessUserClient.updateUserActivity(Long.valueOf(players[1]));
+        	chessMoveCache.clearChessCache(moveRequest.getPlayer());
+        	gameDto = game.getBody();
+        } else {
+        	chessMoveCache.startInCache(gameDto);
+        }
 
-        return updateGame(gameDto);
+        return gameDto;
     }
 
     private BoardState applyMove(BoardState boardState, List<String> moveDetails) {
@@ -225,13 +246,14 @@ public class GameService {
     
 public List<String> getMoveDetails(MoveRequest moveRequest) {
 		
-		Optional<Game> game = gameRepository.findById(moveRequest.getGameId());
+		//Optional<Game> game = gameRepository.findById();
+		ResponseEntity<GameDto> game = chessUserClient.getUserGame(moveRequest.getGameId());
 		PieceType p = PieceType.ABSENT;
 		Color c = Color.ABSENT;
 		String[] move = moveRequest.getMove().split("");
 		String m = move[0];
 		
-		if(game.isPresent() ) {
+		if(game.hasBody() ) {
 			
 			switch(m) {
 				case "p" : p = PieceType.PAWN;
@@ -399,10 +421,6 @@ public List<String> getMoveDetails(MoveRequest moveRequest) {
 		    return isSquareUnderAttack(boardState, kingSquare, playerColor);
 		}
 		
-		@Transactional
-		private Game updateGame(GameDto game) {
-			return gameRepository.saveAndFlush(game.toGame());
-		}
 
 		private boolean isValidMove(BoardState boardState, MoveRequest move){
 			
@@ -447,14 +465,14 @@ public List<String> getMoveDetails(MoveRequest moveRequest) {
 		}
 		
 		public GameDto getChessGameById(Long id) {
-			GameDto game;
+			ResponseEntity<GameDto> game;
 			try {
-			game = gameRepository.getGameById(id).toGameDto();
-			chessKafkaPublisher.streamMatch(game.toString());
+			game = chessUserClient.getUserGame(id);
+			chessKafkaPublisher.streamMatch(game.getBody().toString());
 			} catch(Exception ex) {
 				throw new CustomException("Game not found");
 			}
-			return game;
+			return game.getBody();
 		}
 
 }
