@@ -1,0 +1,29 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: chess-game
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: chess-game-local
+      auto-offset-reset: earliest
+
+eureka:
+  client:
+    register-with-eureka: false
+    fetch-registry: false
+
+logging:
+  level:
+    root: debug
+  file:
+    name: C:/Switch2024/MSApps/chess-game/chess-game/src/main/resources/chess-game-logs-local.txt
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"

@@ -5,24 +5,30 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 
+import jakarta.validation.constraints.NotNull;
+
+/**
+ * Data Transfer Object for game-related data.
+ */
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString
 public class GameDto {
 
+    @NotNull
     private Long id;
-    private String boardState;
-    private String playerTurn;
-    private String status;
 
-	@Override
-	public String toString() {
-		return "GameDto [id=" + id + ", boardState=" + boardState + ", playerTurn=" + playerTurn + ", status=" + status
-				+ "]";
-	}
-    
-    
+    @NotNull
+    private String boardState;
+
+    @NotNull
+    private String playerTurn;
+
+    @NotNull
+    private String status;
 }

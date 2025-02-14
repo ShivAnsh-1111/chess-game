@@ -8,20 +8,47 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import com.online_chess.chess_game.dto.GameDto;
+import com.online_chess.chess_game.dto.UserDto;
 
-@FeignClient(name="chess-user", path="/user")
+/**
+ * Feign client for interacting with the Chess User Service.
+ */
+@FeignClient(name = "chess-user", path = "/user")
 public interface ChessUserClient {
-	
-	@GetMapping("/update/activity/{id}")
-	public ResponseEntity<?> updateUserActivity(@PathVariable Long id);
-	
-	@GetMapping("/name/{name}")
-	public ResponseEntity<?> getUserByName(@PathVariable("name") String username);
-	
-	@GetMapping("/game/{id}")
-	public ResponseEntity<GameDto> getUserGame(@PathVariable("id") Long id);
-	
-	@PostMapping("/game/save")
-	public ResponseEntity<GameDto> saveUserGame(@RequestBody GameDto game);
 
+    /**
+     * Updates the user activity based on the user ID.
+     * 
+     * @param id the ID of the user
+     * @return a ResponseEntity indicating the result of the operation
+     */
+    @GetMapping("/update/activity/{id}")
+    ResponseEntity<Void> updateUserActivity(@PathVariable Long id);
+
+    /**
+     * Retrieves a user by their username.
+     * 
+     * @param username the username of the user
+     * @return a ResponseEntity containing the user details
+     */
+    @GetMapping("/name/{name}")
+    ResponseEntity<UserDto> getUserByName(@PathVariable("name") String username);
+
+    /**
+     * Retrieves the game details for a user based on the game ID.
+     * 
+     * @param id the ID of the game
+     * @return a ResponseEntity containing the game details
+     */
+    @GetMapping("/game/{id}")
+    ResponseEntity<GameDto> getUserGame(@PathVariable("id") Long id);
+
+    /**
+     * Saves the game details for a user.
+     * 
+     * @param game the game details to save
+     * @return a ResponseEntity containing the saved game details
+     */
+    @PostMapping("/game/save")
+    ResponseEntity<GameDto> saveUserGame(@RequestBody GameDto game);
 }

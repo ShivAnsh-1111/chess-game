@@ -1,0 +1,33 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: chess-game
+  profiles:
+    active: prod
+
+  kafka:
+    bootstrap-servers: prod-kafka-broker:9092
+    consumer:
+      group-id: chess-game-prod
+      auto-offset-reset: latest
+
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://prod-eureka-server:8761/eureka/
+
+logging:
+  level:
+    root: info
+  file:
+    name: /var/log/chess-game/chess-game-logs-prod.txt
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"

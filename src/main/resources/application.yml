@@ -1,40 +1,6 @@
  
-server:
-  port: 8082
-
 spring:
+  profiles:
+    active: local
   application:
     name: chess-game
-  cloud:
-    discovery:
-      enabled: true
-    loadbalancer:
-      zone: default
-      enabled: true
-     
-  kafka:
-    bootstrap-servers: localhost:9092
-    consumer:
-      group-id: chess-game
-      auto-offset-reset: earliest
-    listener:
-      missing-topics-fatal: false
-eureka:
-  client:
-    register-with-eureka: true
-    fetch-registry: true
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: "*"
-
-logging:
-  level:
-    feign: debug
-  file:
-    name: C:/Switch2024/MSApps/chess-game/chess-game/src/main/resources/chess-game-logs.txt
-    #path: C:/Switch2024/MSApps/chess-game/chess-game/src/main/resources

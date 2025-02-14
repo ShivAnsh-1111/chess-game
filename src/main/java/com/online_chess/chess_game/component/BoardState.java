@@ -8,12 +8,14 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 
 @Setter
 @Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString
 public class BoardState implements Serializable{
 	
 	
@@ -24,10 +26,5 @@ public class BoardState implements Serializable{
 	
 	private Map<Square,Piece> board;
 	private Color nextTurn;
-	
-	@Override
-	public String toString() {
-		return "BoardState [board=" + board + ", nextTurn=" + nextTurn + "]";
-	}	
 
 }
