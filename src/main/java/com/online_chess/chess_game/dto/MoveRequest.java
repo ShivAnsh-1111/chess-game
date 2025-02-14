@@ -13,7 +13,6 @@ import jakarta.validation.constraints.NotNull;
  */
 @Getter
 @Setter
-@NoArgsConstructor
 @AllArgsConstructor
 @ToString
 public class MoveRequest {

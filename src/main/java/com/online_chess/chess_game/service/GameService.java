@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.online_chess.chess_game.annotation.LogExecutionTime;
 import com.online_chess.chess_game.client.ChessUserClient;
 import com.online_chess.chess_game.component.BoardState;
 import com.online_chess.chess_game.component.Color;
@@ -17,7 +18,7 @@ import com.online_chess.chess_game.exception.CustomException;
 import com.online_chess.chess_game.kafka.ChessKafkaPublisher;
 import com.online_chess.chess_game.helper.ChessMoveValidator;
 import com.online_chess.chess_game.helper.GameHelper;
-import com.online_chess.chess_game.helper.ChessMoveCache;
+import com.online_chess.chess_game.helper.ChessMoveCacheSingleton;
 
 import lombok.extern.java.Log;
 
@@ -30,19 +31,20 @@ public class GameService {
     private static final String GAME_NOT_FOUND = "Game not found";
 
     private final ChessUserClient chessUserClient;
-    private final ChessMoveCache chessMoveCache;
     private final ChessKafkaPublisher chessKafkaPublisher;
     private final GameHelper gameHelper;
 
+    private final ChessMoveCacheSingleton chessMoveCache=ChessMoveCacheSingleton.getInstance();
+
     @Autowired
     public GameService(ChessMoveValidator chessMoveValidator, ChessUserClient chessUserClient,
-                       ChessMoveCache chessMoveCache, ChessKafkaPublisher chessKafkaPublisher, GameHelper gameHelper) {
+                       ChessKafkaPublisher chessKafkaPublisher, GameHelper gameHelper) {
         this.chessUserClient = chessUserClient;
-        this.chessMoveCache = chessMoveCache;
         this.chessKafkaPublisher = chessKafkaPublisher;
         this.gameHelper = gameHelper;
     }
 
+    @LogExecutionTime
     public GameDto startGame(GameRequest gameRequest) {
         BoardState boardState = gameHelper.initializeBoard();
         boardState.setNextTurn(Color.WHITE);
@@ -60,6 +62,7 @@ public class GameService {
         return savedGame.getBody();
     }
 
+    @LogExecutionTime
     public GameDto makeMove(MoveRequest moveRequest) {
         GameDto gameDto = getGameDtoFromCache(moveRequest);
 
